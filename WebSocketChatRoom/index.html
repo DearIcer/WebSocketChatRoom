@@ -1,0 +1,90 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WebSocket Chat Room</title>
+    <style>
+        #msgList {
+            width: 100%;
+            height: 200px;
+            resize: none;
+        }
+        input, button {
+            margin: 5px 0;
+        }
+    </style>
+</head>
+<body>
+<h1>WebSocket Chat Room</h1>
+<textarea id="msgList" readonly></textarea><br>
+<input type="text" id="txtRoomNo" placeholder="Room Number"><br>
+<input type="text" id="txtNickName" placeholder="Nickname"><br>
+<button id="btnJoin">Join Room</button><br>
+<input type="text" id="txtMsg" placeholder="Message"><br>
+<button id="btnSend">Send Message</button><br>
+<button id="btnLeave">Leave Room</button>
+
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script>
+    // JavaScript code from site.js
+    var server = 'ws://localhost:5007'; // 如果开启了https则这里是wss
+
+    var WEB_SOCKET = new WebSocket(server + '/ws');
+
+    WEB_SOCKET.onopen = function (evt) {
+        console.log('Connection open ...');
+        $('#msgList').val('websocket connection opened .');
+    };
+
+    WEB_SOCKET.onmessage = function (evt) {
+        console.log('Received Message: ' + evt.data);
+        if (evt.data) {
+            var content = $('#msgList').val();
+            content = content + '\r\n' + evt.data;
+
+            $('#msgList').val(content);
+        }
+    };
+
+    WEB_SOCKET.onclose = function (evt) {
+        console.log('Connection closed.');
+    };
+
+    $('#btnJoin').on('click', function () {
+        var roomNo = $('#txtRoomNo').val();
+        var nick = $('#txtNickName').val();
+        if (roomNo) {
+            var msg = {
+                action: 'join',
+                msg: roomNo,
+                nick: nick
+            };
+            WEB_SOCKET.send(JSON.stringify(msg));
+        }
+    });
+
+    $('#btnSend').on('click', function () {
+        var message = $('#txtMsg').val();
+        var nick = $('#txtNickName').val();
+        if (message) {
+            WEB_SOCKET.send(JSON.stringify({
+                action: 'send_to_room',
+                msg: message,
+                nick: nick
+            }));
+        }
+    });
+
+    $('#btnLeave').on('click', function () {
+        var nick = $('#txtNickName').val();
+        var msg = {
+            action: 'leave',
+            msg: '',
+            nick: nick
+        };
+        WEB_SOCKET.send(JSON.stringify(msg));
+    });
+</script>
+</body>
+</html>
